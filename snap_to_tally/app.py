@@ -19,29 +19,55 @@ from snap_to_tally.tally_client import (
 from snap_to_tally.tally_xml import build_voucher_xml
 
 
-def _init_session_state() -> None:
+def _init_session_state(db: MappingDatabase) -> None:
     """Initialise Streamlit session-state defaults."""
+    # Load Gemini API Key from DB if it exists
+    db_gemini_key = db.get_config("gemini_api_key") or ""
+    
     defaults = {
         "invoice_data": None,
         "match_results": [],
         "tally_url": "http://localhost:9000",
         "ledgers": [],
         "stock_items": [],
+        "gemini_key": db_gemini_key, # Initialize from DB
     }
     for key, val in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = val
 
 
-def _sidebar() -> None:
-    """Render configuration sidebar."""
-    st.sidebar.title("⚙️ Settings")
-    st.session_state["tally_url"] = st.sidebar.text_input(
+@st.dialog("⚙️ Settings")
+def _settings_dialog(db: MappingDatabase) -> None:
+    """Render configuration dialog."""
+    st.session_state["tally_url"] = st.text_input(
         "Tally URL", value=st.session_state["tally_url"]
     )
-    gemini_key = st.sidebar.text_input("Gemini API Key", type="password")
-    if gemini_key:
+    
+    # API key input
+    gemini_key = st.text_input(
+        "Gemini API Key", 
+        value=st.session_state.get("gemini_key", ""),
+        type="password"
+    )
+    
+    # Save to DB if key changed
+    if gemini_key != st.session_state.get("gemini_key"):
         st.session_state["gemini_key"] = gemini_key
+        db.set_config("gemini_api_key", gemini_key)
+        st.success("API Key saved to database!")
+
+    if st.button("Close"):
+        st.rerun()
+
+def _sidebar(db: MappingDatabase) -> None:
+    """Render configuration sidebar."""
+    st.sidebar.title("Snap-to-Tally")
+    
+    if st.sidebar.button("⚙️ Settings"):
+        _settings_dialog(db)
+
+    st.sidebar.divider()
 
     if st.sidebar.button("🔄 Sync Tally Masters"):
         try:
@@ -153,13 +179,17 @@ def main() -> None:
     st.title("🧾 Snap-to-Tally")
     st.caption("Convert bill photos into TallyPrime vouchers with AI")
 
-    _init_session_state()
-    _sidebar()
+    # Initialize DB in session state to handle multi-threading/dialogs correctly
+    if "db" not in st.session_state:
+        st.session_state.db = MappingDatabase()
+    
+    db = st.session_state.db
+    _init_session_state(db)
+    _sidebar(db)
 
-    with MappingDatabase() as db:
-        _upload_section()
-        _review_section(db)
-        _push_section()
+    _upload_section()
+    _review_section(db)
+    _push_section()
 
 
 if __name__ == "__main__":

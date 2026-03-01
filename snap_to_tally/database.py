@@ -17,9 +17,14 @@ _SCHEMA = """\
 CREATE TABLE IF NOT EXISTS item_mappings (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     bill_name     TEXT    NOT NULL,
-    tally_name    TEXT    NOT NULL,
+    tally_name    NOT NULL,
     created_at    TEXT    DEFAULT (datetime('now')),
     UNIQUE(bill_name)
+);
+
+CREATE TABLE IF NOT EXISTS config (
+    key           TEXT    PRIMARY KEY,
+    value         TEXT    NOT NULL
 );
 """
 
@@ -29,9 +34,27 @@ class MappingDatabase:
 
     def __init__(self, db_path: str | Path = _DEFAULT_DB) -> None:
         self.db_path = Path(db_path)
-        self._conn = sqlite3.connect(str(self.db_path))
+        self._conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
         self._conn.execute("PRAGMA journal_mode=WAL;")
-        self._conn.execute(_SCHEMA)
+        self._conn.executescript(_SCHEMA)
+        self._conn.commit()
+
+    # ── config ──────────────────────────────────────────────────────────
+
+    def get_config(self, key: str) -> Optional[str]:
+        """Retrieve a configuration value by key."""
+        row = self._conn.execute(
+            "SELECT value FROM config WHERE key = ?", (key,)
+        ).fetchone()
+        return row[0] if row else None
+
+    def set_config(self, key: str, value: str) -> None:
+        """Store or update a configuration value."""
+        self._conn.execute(
+            "INSERT INTO config (key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            (key, value),
+        )
         self._conn.commit()
 
     # ── queries ──────────────────────────────────────────────────────
