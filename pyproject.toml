@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "snap-to-tally"
+version = "0.1.0"
+description = "AI-powered tool to convert bill photos/scans into TallyPrime vouchers"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "google-generativeai>=0.4.0",
+    "thefuzz[speedup]>=0.20.0",
+    "requests>=2.31.0",
+    "streamlit>=1.30.0",
+    "Pillow>=10.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
