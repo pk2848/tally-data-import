@@ -66,7 +66,7 @@ def extract_invoice_data(
     image_path: str | Path,
     *,
     api_key: str | None = None,
-    model_name: str = "gemini-1.5-flash",
+    model_name: str = "gemini-2.5-flash",
 ) -> dict[str, Any]:
     """Send a bill image to Gemini and return structured invoice data.
 
