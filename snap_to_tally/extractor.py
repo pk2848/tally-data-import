@@ -44,7 +44,7 @@ Do NOT add commentary – output only the JSON.
 }
 
 Rules:
-- Use ISO-8601 date format (YYYY-MM-DD).
+- Use ISO 8601 date format (YYYY-MM-DD).
 - If a field is absent on the bill, use null for strings or 0 for numbers.
 - `gst_rate` should be in percent (e.g. 18 for 18%).
 - `amount` is the line total *before* tax.

@@ -156,13 +156,10 @@ def main() -> None:
     _init_session_state()
     _sidebar()
 
-    db = MappingDatabase()
-    try:
+    with MappingDatabase() as db:
         _upload_section()
         _review_section(db)
         _push_section()
-    finally:
-        db.close()
 
 
 if __name__ == "__main__":

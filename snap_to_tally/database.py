@@ -70,3 +70,9 @@ class MappingDatabase:
     def close(self) -> None:
         """Close the database connection."""
         self._conn.close()
+
+    def __enter__(self) -> "MappingDatabase":
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.close()
